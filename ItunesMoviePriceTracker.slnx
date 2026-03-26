@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ItunesMoviePriceTracker.Repository/ItunesMoviePriceTracker.Repository.csproj" />
+    <Project Path="src/ItunesMoviePriceTracker.Services/ItunesMoviePriceTracker.Services.csproj" />
+    <Project Path="src/ItunesMoviePriceTracker.Shared/ItunesMoviePriceTracker.Shared.csproj" />
+    <Project Path="src/ItunesMoviePriceTracker.UpdateService/ItunesMoviePriceTracker.UpdateService.csproj" />
+    <Project Path="src/ItunesMoviePriceTracker.Web/ItunesMoviePriceTracker.Web.csproj" />
+  </Folder>
+</Solution>
