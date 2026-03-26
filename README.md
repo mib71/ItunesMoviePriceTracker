@@ -25,9 +25,9 @@ A Blazor Server application for monitoring iTunes movie HD prices. Track price h
 - 📋 Browse all tracked iTunes movies in a sortable, filterable data grid
 - 📈 Price history per movie with trend indicators (up / down / all-time low)
 - 🎯 Set a personal watch price per movie
-- 🔄 Automatic price checks via Windows Task Scheduler
+- 🔄 Scheduled price checks via Windows Task Scheduler
 - 🖱️ Manual price update trigger from the UI
-- ⏱️ Auto-refresh every 5 minutes
+- 🌙 Dark / light mode with system theme detection and localStorage persistence
 - 🔍 Filter by title and director
 
 ---
@@ -54,15 +54,7 @@ cd ItunesMoviePriceTracker
 
 Update the connection string in both `appsettings.json` files (see [Configuration](#configuration) below).
 
-### 3. Run EF Core migrations
-
-```bash
-dotnet ef database update --project src/ItunesMoviePriceTracker.Infrastructure --startup-project src/ItunesMoviePriceTracker.Web
-```
-
-> If the database already exists with data, the migration will only add the new `WatchPrice` column — all existing data is preserved.
-
-### 4. Run the Web app locally
+### 3. Run the Web app locally
 
 ```bash
 dotnet run --project src/ItunesMoviePriceTracker.Web
@@ -70,12 +62,13 @@ dotnet run --project src/ItunesMoviePriceTracker.Web
 
 Or open `ItunesMoviePriceTracker.sln` in Visual Studio and press F5.
 
-### 5. Set up the Update Service (optional)
+The database and all migrations are applied automatically on startup. If the database does not exist it will be created.
+
+### 4. Set up the Update Service (optional)
 
 To run price checks on a schedule, register the UpdateService with Windows Task Scheduler:
 
 ```bash
-# Build the UpdateService
 dotnet publish src/ItunesMoviePriceTracker.UpdateService -c Release -o publish/UpdateService
 ```
 
@@ -84,7 +77,7 @@ Then create a new task in Windows Task Scheduler pointing to:
 publish/UpdateService/ItunesMoviePriceTracker.UpdateService.exe
 ```
 
-Configure the trigger to run at your preferred times. The service can also be triggered manually from the Web UI.
+Configure the trigger to run at your preferred times. Price checks can also be triggered manually from the Web UI via the Refresh button.
 
 ---
 
@@ -92,23 +85,29 @@ Configure the trigger to run at your preferred times. The service can also be tr
 
 ### `appsettings.json` (Web & UpdateService)
 
-Both `ItunesMoviePriceTracker.Web` and `ItunesMoviePriceTracker.UpdateService` require a connection string:
+Both `ItunesMoviePriceTracker.Web` and `ItunesMoviePriceTracker.UpdateService` require a connection string and price check configuration:
 
 ```json
 {
   "ConnectionStrings": {
     "DefaultConnection": "Server=YOUR_SERVER;Database=ItunesMovies;Trusted_Connection=True;TrustServerCertificate=True;"
   },
+  "PriceCheck": {
+    "ThrottleHours": 24
+  },
   "Logging": {
     "LogLevel": {
       "Default": "Information",
       "Microsoft.AspNetCore": "Warning"
     }
-  }
+  },
+  "AllowedHosts": "*"
 }
 ```
 
 Replace `YOUR_SERVER` with your SQL Server instance name, e.g. `localhost` or `.\SQLEXPRESS`.
+
+`ThrottleHours` controls how many hours must pass before a movie is eligible for a new price check. Defaults to `24` if not set.
 
 ---
 
@@ -160,7 +159,7 @@ Web → (interface in Shared) → Service → Repository → MSSQL
 Example:
 ```csharp
 // ✅ Primary constructor
-public class MovieRepository(AppDbContext context) : IMovieRepository
+public class MovieRepository(AppDbContext context, int throttleHours) : IMovieRepository
 {
     public async Task<IEnumerable<Movie>> GetAllAsync()
         => await context.Movies.Include(m => m.Prices).OrderBy(m => m.TrackHdPrice).ToListAsync();
@@ -176,17 +175,18 @@ public class MovieRepository : IMovieRepository
 
 ---
 
-
+## Architecture & Key Decisions
 
 | Area | Choice | Reason |
 |---|---|---|
 | Framework | .NET 10 / Blazor Server | Modern, interactive server rendering |
 | Database | MSSQL (existing) | Preserves years of accumulated price data |
-| ORM | EF Core Code First | Existing DB already uses EF migrations |
+| ORM | EF Core Code First | Migrations handle schema changes cleanly |
 | Hosting | IIS (local) | Consistent with existing setup |
 | Price updates | Windows Task Scheduler + manual UI trigger | Simple, reliable, no external dependencies |
 | iTunes data | iTunes Search API (Apple) | Proven, no scraping needed |
 | HTTP | IHttpClientFactory | Best practice for HttpClient lifetime management |
+| Theme | System detection + localStorage | Respects user preference, persists across navigation |
 
 ### Layered Architecture
 
@@ -203,11 +203,15 @@ Trend is intentionally calculated in the UI layer (Blazor component), not in ser
 
 - Store country locked to `se` (Swedish iTunes store)
 - 3-second delay between API calls — respects Apple rate limits
-- Movies only checked if `LastChecked` is older than 4 hours
+- Movies only checked if `LastChecked` is older than `ThrottleHours` (configurable, default 24h)
 
-### Database Migration Strategy
+### Database Auto-Migration
 
-Additive only — no destructive changes to existing tables. The only schema change from v1 is the addition of the nullable `WatchPrice` column on `dbo.Movies`.
+On startup, `ApplyMigrationsAsync()` is called via `Program.cs`. This creates the database if it does not exist and applies any pending migrations automatically. No manual `dotnet ef database update` needed.
+
+### Theme
+
+Theme is managed entirely in JavaScript — Blazor never touches it. On page load, the saved `localStorage` value is applied. If no preference is saved, the system theme is used. The toggle button in the header persists the choice to `localStorage`.
 
 ---
 
@@ -218,12 +222,12 @@ Additive only — no destructive changes to existing tables. The only schema cha
 | Column | Type | Notes |
 |---|---|---|
 | TrackId | int PK | iTunes Track ID |
-| TrackName | nvarchar(max) | Movie title |
+| TrackName | nvarchar(500) | Movie title |
 | ReleaseDate | datetime2(7) | |
-| ArtistName | nvarchar(max) | Director |
-| LongDescription | nvarchar(max) | |
-| ArtworkUrl60 | nvarchar(max) | Thumbnail |
-| ArtworkUrl400 | nvarchar(max) | Full artwork |
+| ArtistName | nvarchar(255) | Director |
+| LongDescription | nvarchar(2000) | |
+| ArtworkUrl60 | nvarchar(500) | Thumbnail |
+| ArtworkUrl400 | nvarchar(500) | Full artwork |
 | TrackHdPrice | decimal(18,2) | Latest known price |
 | LastChecked | datetime2(7) | Throttle control |
 | WatchPrice | decimal(18,2) | Target watch price (nullable) |
@@ -244,7 +248,6 @@ Additive only — no destructive changes to existing tables. The only schema cha
 - Multi-language support (UI layer, resource strings)
 - Support for additional iTunes store countries
 - Push notification when `TrackHdPrice` drops below `WatchPrice`
-- Optimize DB column sizes — replace `nvarchar(max)` with appropriate lengths (e.g. `nvarchar(500)` for `TrackName`, `nvarchar(255)` for `ArtistName`, `nvarchar(500)` for artwork URLs). `LongDescription` stays `nvarchar(max)`. Do this as a separate EF migration after the app is stable.
 
 ---
 
