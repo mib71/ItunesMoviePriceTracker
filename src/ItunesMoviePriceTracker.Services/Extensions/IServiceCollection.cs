@@ -9,7 +9,10 @@ namespace ItunesMoviePriceTracker.Services.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddMovieServices(this IServiceCollection services, string connectionString, int throttleHours = 24)
+    public static IServiceCollection AddMovieServices(this IServiceCollection services, 
+        string connectionString, 
+        int throttleHours,
+        string storeCountry)
     {
         // Database
         services.AddDbContext<AppDbContext>(options =>
@@ -26,7 +29,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMovieService, MovieService>();
         services.AddScoped<IMoviePriceService, MoviePriceService>();
         services.AddScoped<IPriceUpdateService, PriceUpdateService>();
-        services.AddScoped<IItunesApiService, ItunesApiService>();
+        services.AddScoped<IItunesApiService>(sp =>
+        new ItunesApiService(
+            sp.GetRequiredService<IHttpClientFactory>(),
+            storeCountry));
 
         // HttpClient
         services.AddHttpClient();
