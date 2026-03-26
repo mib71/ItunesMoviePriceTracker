@@ -148,7 +148,35 @@ Web → (interface in Shared) → Service → Repository → MSSQL
 
 ---
 
-## Architecture & Key Decisions
+## Coding Conventions
+
+| Convention | Choice |
+|---|---|
+| Constructors | Primary constructors (C# 12) |
+| Async | Async/await throughout |
+| Nullable | Nullable reference types enabled |
+| Naming | PascalCase for classes/methods, camelCase for locals |
+
+Example:
+```csharp
+// ✅ Primary constructor
+public class MovieRepository(AppDbContext context) : IMovieRepository
+{
+    public async Task<IEnumerable<Movie>> GetAllAsync()
+        => await context.Movies.Include(m => m.Prices).OrderBy(m => m.TrackHdPrice).ToListAsync();
+}
+
+// ❌ Old style
+public class MovieRepository : IMovieRepository
+{
+    private readonly AppDbContext _context;
+    public MovieRepository(AppDbContext context) { _context = context; }
+}
+```
+
+---
+
+
 
 | Area | Choice | Reason |
 |---|---|---|
