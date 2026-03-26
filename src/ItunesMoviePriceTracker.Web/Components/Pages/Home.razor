@@ -15,7 +15,10 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="mb-0">Movie List</h3>
-        <div class="d-flex align-items-center gap-2">            
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-secondary" @onclick="CheckForPriceUpdateAsync" disabled="@isChecking">
+                @(isChecking ? "Checking..." : "🔄 Refresh")
+            </button>
             <button class="btn btn-primary" @onclick="GoToAddMovie" disabled="@isChecking">
                 Add Movie
             </button>
@@ -79,10 +82,9 @@
     private List<MovieDto> movies = new();
     private List<PriceDynamic> todaysUpdates = new();
     private PaginationState pagination = new() { ItemsPerPage = 15 };
-    private Timer? timer;
     private bool isChecking;
     private bool isDark;
-    private string statusMessage = "Checking for new prices...(this may take a while)";
+    private string statusMessage = "Press Refresh to check for new prices.";
     private string? titleFilter;
     private string? directorFilter;
 
@@ -107,21 +109,9 @@
     protected override async Task OnInitializedAsync()
     {
         movies = (await MovieService.GetAllMoviesAsync()).ToList();
-        PriceTrend();
-        _ = CheckForPriceUpdateAsync();
+        PriceTrend();        
     }
-
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if (firstRender)
-        {
-            timer = new Timer(_ =>
-            {
-                NavigationManager.NavigateTo("/", forceLoad: true);
-            }, null, 300_000, 300_000);
-        }
-    }
-
+    
     private async Task CheckForPriceUpdateAsync()
     {
         isChecking = true;
@@ -160,15 +150,11 @@
         
     private void GoToAddMovie()
     {
-        timer?.Dispose();
-        timer = null;
         NavigationManager.NavigateTo("/addmovie");
     }
 
     private void GoToMovie(int id)
     {
-        timer?.Dispose();
-        timer = null;
         NavigationManager.NavigateTo($"/movie/{id}");
     }
 

@@ -9,14 +9,17 @@ namespace ItunesMoviePriceTracker.Services.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddMovieServices(this IServiceCollection services, string connectionString)
+    public static IServiceCollection AddMovieServices(this IServiceCollection services, string connectionString, int throttleHours = 24)
     {
         // Database
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(connectionString));
 
         // Repositories
-        services.AddScoped<IMovieRepository, MovieRepository>();
+        services.AddScoped<IMovieRepository>(sp =>
+        new MovieRepository(
+            sp.GetRequiredService<AppDbContext>(),
+            throttleHours));
         services.AddScoped<IMoviePriceRepository, MoviePriceRepository>();
 
         // Services

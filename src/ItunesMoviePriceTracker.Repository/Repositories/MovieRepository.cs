@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ItunesMoviePriceTracker.Repository.Repositories;
 
-public class MovieRepository(AppDbContext context) : IMovieRepository
+public class MovieRepository(AppDbContext context, int throttleHours = 24) : IMovieRepository
 {
     public async Task<IEnumerable<Movie>> GetAllAsync()
         => await context.Movies.Include(m => m.Prices).OrderBy(m => m.TrackHdPrice).ToListAsync();
@@ -43,7 +43,7 @@ public class MovieRepository(AppDbContext context) : IMovieRepository
 
     public async Task<IEnumerable<Movie>> GetMoviesForPriceCheckAsync()
     {
-        var threshold = DateTime.UtcNow.AddHours(-4);
+        var threshold = DateTime.UtcNow.AddHours(-throttleHours);
         return await context.Movies
             .Where(m => m.LastChecked <= threshold)
             .ToListAsync();

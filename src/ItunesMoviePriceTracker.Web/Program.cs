@@ -11,7 +11,8 @@ builder.Services.AddRazorComponents()
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-builder.Services.AddMovieServices(connectionString);
+var throttleHours = builder.Configuration.GetValue<int>("PriceCheck:ThrottleHours");
+builder.Services.AddMovieServices(connectionString, throttleHours);
 
 var app = builder.Build();
 
