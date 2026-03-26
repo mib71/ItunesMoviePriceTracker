@@ -1,4 +1,4 @@
-﻿namespace ItunesMoviePriceTracker.Core.DTOs;
+﻿namespace ItunesMoviePriceTracker.Shared.DTOs;
 
 public class ItunesMovieResult
 {

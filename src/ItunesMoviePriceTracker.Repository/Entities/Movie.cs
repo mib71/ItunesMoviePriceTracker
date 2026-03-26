@@ -7,11 +7,16 @@ public class Movie
 {
     [Key]
     public int TrackId { get; set; }
+    [MaxLength(500)]
     public string? TrackName { get; set; }
     public DateTime? ReleaseDate { get; set; }
+    [MaxLength(255)]
     public string? ArtistName { get; set; }
+    [MaxLength(2000)]
     public string? LongDescription { get; set; }
+    [MaxLength(500)]
     public string? ArtworkUrl60 { get; set; }
+    [MaxLength(500)]
     public string? ArtworkUrl400 { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]

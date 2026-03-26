@@ -1,7 +1,180 @@
 ﻿@page "/"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
-<PageTitle>Home</PageTitle>
+@inject IMovieService MovieService
+@inject IMoviePriceService MoviePriceService
+@inject IPriceUpdateService PriceUpdateService
+@inject NavigationManager NavigationManager
 
-<h1>Hello, world!</h1>
+@using ItunesMoviePriceTracker.Services.Interfaces
+@using ItunesMoviePriceTracker.Shared.DTOs
+@using Microsoft.AspNetCore.Components.QuickGrid
 
-Welcome to your new app.
+<PageTitle>Movie List</PageTitle>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Movie List</h3>
+        <div class="d-flex align-items-center gap-2">            
+            <button class="btn btn-primary" @onclick="GoToAddMovie" disabled="@isChecking">
+                Add Movie
+            </button>
+        </div>
+    </div>
+
+    <details class="mb-3">
+        <summary>@statusMessage</summary>
+        @if (todaysUpdates.Any())
+        {
+            @foreach (var price in todaysUpdates)
+            {
+                <p class="mb-0">&bull; @price.TrackName — @price.Price kr</p>
+            }
+        }
+    </details>
+
+    @if (movies is null)
+    {
+        <p>Loading...</p>
+    }
+    else if (!movies.Any())
+    {
+        <p>No movies in DB.</p>
+    }
+    else
+    {
+        <div class="grid">
+            <QuickGrid Items="FilteredMovies" Pagination="@pagination">
+                <PropertyColumn Property="m => m.TrackName" Title="Title" Sortable="true" Align="Align.Left" Class="title-width">
+                    <ColumnOptions>
+                        <input type="search" autofocus @bind="titleFilter" @bind:event="oninput" placeholder="Filter..." />
+                    </ColumnOptions>
+                </PropertyColumn>
+                <PropertyColumn Property="m => m.ReleaseDate" Title="Released" Format="yyyy" Sortable="true" Align="Align.Left" />
+                <PropertyColumn Property="m => m.ArtistName" Title="Director" Sortable="true" Align="Align.Left" Class="artistName-width">
+                    <ColumnOptions>
+                        <input type="search" autofocus @bind="directorFilter" @bind:event="oninput" placeholder="Filter..." />
+                    </ColumnOptions>
+                </PropertyColumn>
+                <TemplateColumn Title="Trend" Align="Align.Center">
+                    @if (!string.IsNullOrEmpty(context.Trend))
+                    {
+                        <img style="height: 20px" src="@context.Trend" alt="trend" />
+                    }
+                </TemplateColumn>
+                <PropertyColumn Property="m => m.TrackHdPrice" Title="Price" Sortable="true" Align="Align.Left" Format="N2" />
+                <TemplateColumn Title="Info" Align="Align.Center">
+                    <button type="button" class="btn btn-link p-0" @onclick="() => GoToMovie(context.TrackId)">
+                        <img style="width: 40px; height: auto" src="@context.ArtworkUrl60" alt="@context.TrackName" />
+                    </button>
+                </TemplateColumn>
+                <PropertyColumn Property="m => m.WatchPrice" Title="Watch" Sortable="true" Align="Align.Left" Format="N2" />
+            </QuickGrid>
+        </div>
+        <Paginator State="@pagination" />
+    }
+</div>
+
+@code {
+    private List<MovieDto> movies = new();
+    private List<PriceDynamic> todaysUpdates = new();
+    private PaginationState pagination = new() { ItemsPerPage = 15 };
+    private Timer? timer;
+    private bool isChecking;
+    private bool isDark;
+    private string statusMessage = "Checking for new prices...(this may take a while)";
+    private string? titleFilter;
+    private string? directorFilter;
+
+    private IQueryable<MovieDto> FilteredMovies
+    {
+        get
+        {
+            var result = movies.AsQueryable();
+
+            if (!string.IsNullOrEmpty(titleFilter))
+                result = result.Where(m => m.TrackName != null &&
+                    m.TrackName.Contains(titleFilter, StringComparison.CurrentCultureIgnoreCase));
+
+            if (!string.IsNullOrEmpty(directorFilter))
+                result = result.Where(m => m.ArtistName != null &&
+                    m.ArtistName.Contains(directorFilter, StringComparison.CurrentCultureIgnoreCase));
+
+            return result;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        movies = (await MovieService.GetAllMoviesAsync()).ToList();
+        PriceTrend();
+        _ = CheckForPriceUpdateAsync();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            timer = new Timer(_ =>
+            {
+                NavigationManager.NavigateTo("/", forceLoad: true);
+            }, null, 300_000, 300_000);
+        }
+    }
+
+    private async Task CheckForPriceUpdateAsync()
+    {
+        isChecking = true;
+        statusMessage = "Checking for new prices...(this may take a while)";
+
+        statusMessage = await PriceUpdateService.CheckForPriceUpdateAsync();
+        movies = (await MovieService.GetAllMoviesAsync()).ToList();
+
+        var updates = (await MoviePriceService.GetTodaysChangesAsync()).ToList();
+        
+        todaysUpdates = updates.Select(p => new PriceDynamic
+        {
+            TrackName = p.TrackName ?? p.MovieTrackId.ToString(),
+            Price = p.Price
+        }).ToList();
+
+        statusMessage += $" — {updates.Count} updated today";
+        PriceTrend();
+        isChecking = false;
+        StateHasChanged();
+    }
+
+    private void PriceTrend()
+    {
+        foreach (var movie in movies)
+        {
+            var sorted = movie.Prices.OrderByDescending(p => p.Date).ToList();
+            if (sorted.Count >= 2)
+            {
+                if (sorted[0].Price > sorted[1].Price) movie.Trend = "images/arrow_red.png";
+                if (sorted[0].Price < sorted[1].Price) movie.Trend = "images/arrow_green.png";
+                if (sorted.First().Price == sorted.Min(p => p.Price)) movie.Trend = "images/arrow_yellow.png";
+            }
+        }
+    }
+        
+    private void GoToAddMovie()
+    {
+        timer?.Dispose();
+        timer = null;
+        NavigationManager.NavigateTo("/addmovie");
+    }
+
+    private void GoToMovie(int id)
+    {
+        timer?.Dispose();
+        timer = null;
+        NavigationManager.NavigateTo($"/movie/{id}");
+    }
+
+    private class PriceDynamic
+    {
+        public string TrackName { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+    }
+}

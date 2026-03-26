@@ -6,4 +6,5 @@ public class MoviePriceDto
     public DateTime Date { get; set; }
     public decimal Price { get; set; }
     public int MovieTrackId { get; set; }
+    public string? TrackName { get; set; }
 }

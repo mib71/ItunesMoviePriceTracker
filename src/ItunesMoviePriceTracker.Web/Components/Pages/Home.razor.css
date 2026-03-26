@@ -1,0 +1,12 @@
+﻿/* Assign default width to country name column */
+::deep thead .title-width {
+    width: 35rem;
+}
+
+::deep threa .artistName-width {
+    width: 30rem;
+}
+
+/*::deep tr:nth-child(even) {
+    background: rgba(255,255,255,0.4);
+}*/

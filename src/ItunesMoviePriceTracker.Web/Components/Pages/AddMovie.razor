@@ -1,0 +1,123 @@
+﻿@page "/addmovie"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@inject IMovieService MovieService
+@inject IItunesApiService ItunesApiService
+@inject NavigationManager NavigationManager
+
+@using ItunesMoviePriceTracker.Services.Interfaces
+@using ItunesMoviePriceTracker.Shared.DTOs
+
+<PageTitle>Add Movie</PageTitle>
+
+<div class="container mt-4">
+    <h3 class="text-center mb-4">Add Movie</h3>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="input-group mb-3">
+                <input type="number" class="form-control" placeholder="iTunes Track ID" @bind="trackId" />
+                <button class="btn btn-primary" type="button" @onclick="LookUpMovie">Check ID</button>
+            </div>
+        </div>
+    </div>
+
+    @if (searchResult is not null)
+    {
+        <div class="row justify-content-center mt-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-4">
+                                <img src="@searchResult.ArtworkUrl400" class="img-fluid rounded" alt="@searchResult.TrackName" />
+                            </div>
+                            <div class="col-8">
+                                <h5 class="card-title">@searchResult.TrackName</h5>
+                                <p class="card-text mb-1"><small class="text-muted">@searchResult.ReleaseDate?.ToString("yyyy")</small></p>
+                                <p class="card-text mb-1">Director: @searchResult.ArtistName</p>
+                                <p class="card-text mb-1">Price: @searchResult.TrackHdPrice kr</p>
+                            </div>
+                        </div>
+                        <p class="card-text mt-3"><small>@searchResult.LongDescription</small></p>
+
+                        @if (!string.IsNullOrEmpty(message))
+                        {
+                            <div class="alert @messageClass mt-2" role="alert">
+                                @message
+                            </div>
+                        }
+
+                        @if (!movieExists)
+                        {
+                            <button class="btn btn-success mt-2" type="button" @onclick="AddMovieToDb">Add to list</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row justify-content-center mt-3">
+        <div class="col-md-6">
+            <button class="btn btn-secondary" @onclick="BackToList">Back to list</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int? trackId;
+    private ItunesMovieResult? searchResult;
+    private bool movieExists;
+    private string message = string.Empty;
+    private string messageClass = string.Empty;
+
+    private async Task LookUpMovie()
+    {
+        if (trackId is null) return;
+
+        message = string.Empty;
+        searchResult = null;
+        movieExists = false;
+
+        searchResult = await ItunesApiService.FetchMovieAsync(trackId.Value);
+
+        if (searchResult is null)
+        {
+            message = "Movie not found on iTunes.";
+            messageClass = "alert-warning";
+            return;
+        }
+
+        var existing = await MovieService.GetMovieAsync(searchResult.TrackId);
+        if (existing is not null)
+        {
+            movieExists = true;
+            message = "Movie already exists in DB.";
+            messageClass = "alert-info";
+        }
+
+        trackId = null;
+    }
+
+    private async Task AddMovieToDb()
+    {
+        if (searchResult is null) return;
+
+        var result = await MovieService.AddMovieAsync(searchResult.TrackId);
+
+        if (result)
+        {
+            message = "Movie saved successfully!";
+            messageClass = "alert-success";
+            movieExists = true;
+        }
+        else
+        {
+            message = "Error saving movie.";
+            messageClass = "alert-danger";
+        }
+    }
+
+    private void BackToList() => NavigationManager.NavigateTo("/");
+}

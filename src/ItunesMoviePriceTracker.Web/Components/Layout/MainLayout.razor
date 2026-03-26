@@ -1,20 +1,19 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+<div class="container py-2 d-flex justify-content-between align-items-center">
+    <span class="fw-bold fs-5">🎬 ItunesMoviePriceTracker</span>
+    <button class="btn btn-sm btn-outline-secondary" id="theme-toggle">
+        🌙 Dark
+    </button>
 </div>
+
+<hr class="mt-0 mb-0" />
+
+<main>
+    <article class="container-fluid px-4 py-3">
+        @Body
+    </article>
+</main>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.

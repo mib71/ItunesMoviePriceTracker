@@ -18,6 +18,53 @@
     <Routes />
     <ReconnectModal />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script>
+        function applyTheme(theme) {
+        document.documentElement.setAttribute('data-bs-theme', theme);
+        const btn = document.getElementById('theme-toggle');
+        if (btn) btn.innerText = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+        }
+
+        function getSystemTheme() {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        function getSavedTheme() {
+        return localStorage.getItem('theme') ?? getSystemTheme();
+        }
+
+        applyTheme(getSavedTheme());
+
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        if (!localStorage.getItem('theme')) {
+        applyTheme(e.matches ? 'dark' : 'light');
+        }
+        });
+
+        document.addEventListener('click', e => {
+        if (e.target.id === 'theme-toggle' || e.target.closest('#theme-toggle')) {
+        window.themeInterop.toggleTheme();
+        }
+        });
+
+        window.themeInterop = {
+        toggleTheme: () => {
+        const current = document.documentElement.getAttribute('data-bs-theme') ?? 'light';
+        const next = current === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('theme', next);
+        applyTheme(next);
+        },
+        getCurrentTheme: () => {
+        return document.documentElement.getAttribute('data-bs-theme') ?? getSavedTheme();
+        }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+        Blazor.addEventListener('enhancedload', () => {
+        applyTheme(getSavedTheme());
+        });
+        });
+    </script>
 </body>
 
 </html>
