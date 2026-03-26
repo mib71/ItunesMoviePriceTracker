@@ -93,7 +93,8 @@ Both `ItunesMoviePriceTracker.Web` and `ItunesMoviePriceTracker.UpdateService` r
     "DefaultConnection": "Server=YOUR_SERVER;Database=ItunesMovies;Trusted_Connection=True;TrustServerCertificate=True;"
   },
   "PriceCheck": {
-    "ThrottleHours": 24
+    "ThrottleHours": 24,
+    "StoreCountry": "se"
   },
   "Logging": {
     "LogLevel": {
@@ -108,6 +109,8 @@ Both `ItunesMoviePriceTracker.Web` and `ItunesMoviePriceTracker.UpdateService` r
 Replace `YOUR_SERVER` with your SQL Server instance name, e.g. `localhost` or `.\SQLEXPRESS`.
 
 `ThrottleHours` controls how many hours must pass before a movie is eligible for a new price check. Defaults to `24` if not set.
+
+`StoreCountry` sets the iTunes store country code. Defaults to `se` (Sweden) if not set.
 
 ---
 
@@ -201,7 +204,7 @@ Trend is intentionally calculated in the UI layer (Blazor component), not in ser
 
 ### iTunes API Behavior
 
-- Store country locked to `se` (Swedish iTunes store)
+- Store country configurable via `PriceCheck:StoreCountry` in `appsettings.json` (default `se`)
 - 3-second delay between API calls — respects Apple rate limits
 - Movies only checked if `LastChecked` is older than `ThrottleHours` (configurable, default 24h)
 
