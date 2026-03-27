@@ -32,7 +32,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IItunesApiService>(sp =>
         new ItunesApiService(
             sp.GetRequiredService<IHttpClientFactory>(),
-            storeCountry));
+            storeCountry)
+        );
+        services.AddScoped<INotificationService, EmailNotificationService>();
 
         // HttpClient
         services.AddHttpClient();
