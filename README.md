@@ -12,11 +12,9 @@ A Blazor Server application for monitoring iTunes movie HD prices. Track price h
 
 ## Screenshots
 
-> _Screenshots will be added once the UI is complete._
-
-| Movie List | Movie Detail |
-|---|---|
-| ![Movie List](docs/screenshots/movie-list.png) | ![Movie Detail](docs/screenshots/movie-detail.png) |
+| Movie List | Add Movie | Movie Detail |
+|---|---|---|
+| ![Movie List](docs/screenshots/movie-list.png) | ![Add Movie](docs/screenshots/add-movie.png) | ![Movie Detail](docs/screenshots/movie-detail.png) |
 
 ---
 
