@@ -5,11 +5,17 @@ using Serilog;
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
-    .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
     .WriteTo.File(
         path: "logs/log-.txt",
         rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 30)
+        retainedFileCountLimit: 30,
+        restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Warning)
+    .WriteTo.File(
+        path: "logs/app-.txt",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 7,
+        restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information)
     .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
