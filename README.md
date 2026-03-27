@@ -189,7 +189,9 @@ iisreset /start
 
 ---
 
+## Architecture
 
+### Solution Structure
 
 ```
 ItunesMoviePriceTracker/
@@ -218,9 +220,9 @@ Repository  ←  Services
 ### Data Flow
 
 ```
-Web → (interface in Shared) → Service → Repository → MSSQL
-                                  ↑
-                     EF entity mapped to DTO in Service layer
+Web → (DTOs in Shared) → Service → Repository → MSSQL
+                              ↑
+                 EF entity mapped to DTO in Service layer
 ```
 
 ---
