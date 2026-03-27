@@ -6,7 +6,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20IIS-0078D4?logo=windows)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-A Blazor Server application for monitoring iTunes movie HD prices. Track price history and set watch prices — all from a local IIS-hosted web app.
+A Blazor Server application for monitoring iTunes movie HD and 4K prices. Track price history and set watch prices — all from a local IIS-hosted web app.
 
 ---
 
@@ -94,6 +94,9 @@ Both `ItunesMoviePriceTracker.Web` and `ItunesMoviePriceTracker.UpdateService` r
     "ThrottleHours": 24,
     "StoreCountry": "se"
   },
+  "DataProtection": {
+    "KeyPath": "YOUR_KEY_PATH"
+  },
   "Notifications": {
     "SmtpHost": "smtp.gmail.com",
     "SmtpPort": 587,
@@ -111,11 +114,82 @@ Replace `YOUR_SERVER` with your SQL Server instance name, e.g. `localhost` or `.
 
 `StoreCountry` sets the iTunes store country code. Defaults to `se` (Sweden) if not set.
 
-`Notifications` — SMTP settings for email notifications when a price drops below `WatchPrice`. Not yet implemented — coming in a future release.
+`DataProtection:KeyPath` sets the path where ASP.NET Core Data Protection keys are persisted. Example: `C:\\inetpub\\ItunesMoviePriceTracker\\keys`. The IIS app pool identity needs write access to this folder.
+
+`Notifications` — SMTP settings for email notifications when a price drops below `WatchPrice`.
 
 ---
 
-## Solution Structure
+## IIS Setup
+
+### 1. Install ASP.NET Core Hosting Bundle for .NET 10
+
+Download and install from [dot.net/download](https://dotnet.microsoft.com/download/dotnet/10.0) then run:
+
+```bash
+iisreset
+```
+
+### 2. Create site folder and required subfolders
+
+```bash
+mkdir C:\inetpub\ItunesMoviePriceTracker
+mkdir C:\inetpub\ItunesMoviePriceTracker\logs
+mkdir C:\inetpub\ItunesMoviePriceTracker\keys
+```
+
+### 3. Grant IIS permissions
+
+```bash
+icacls "C:\inetpub\ItunesMoviePriceTracker" /grant "IIS_IUSRS:(OI)(CI)RX"
+icacls "C:\inetpub\ItunesMoviePriceTracker\logs" /grant "IIS_IUSRS:(OI)(CI)F"
+icacls "C:\inetpub\ItunesMoviePriceTracker\keys" /grant "IIS_IUSRS:(OI)(CI)F"
+icacls "C:\inetpub\ItunesMoviePriceTracker\keys" /grant "IIS APPPOOL\ItunesMoviePriceTracker:(OI)(CI)F"
+```
+
+> Note: The last command uses the exact application pool identity. Replace `ItunesMoviePriceTracker` with your site name if different.
+
+### 4. Grant SQL Server permissions
+
+Run in SSMS:
+
+```sql
+USE master;
+CREATE LOGIN [IIS APPPOOL\ItunesMoviePriceTracker] FROM WINDOWS;
+
+USE ItunesMovies;
+CREATE USER [IIS APPPOOL\ItunesMoviePriceTracker] FOR LOGIN [IIS APPPOOL\ItunesMoviePriceTracker];
+ALTER ROLE db_datareader ADD MEMBER [IIS APPPOOL\ItunesMoviePriceTracker];
+ALTER ROLE db_datawriter ADD MEMBER [IIS APPPOOL\ItunesMoviePriceTracker];
+ALTER ROLE db_ddladmin ADD MEMBER [IIS APPPOOL\ItunesMoviePriceTracker];
+```
+
+### 5. Create IIS site
+
+In IIS Manager → **Sites** → **Add Website**:
+- **Site name:** `ItunesMoviePriceTracker`
+- **Physical path:** `C:\inetpub\ItunesMoviePriceTracker`
+- **Port:** `8080`
+
+### 6. Configure Application Pool
+
+In IIS Manager → **Application Pools** → `ItunesMoviePriceTracker` → **Advanced Settings**:
+- **.NET CLR Version:** `No Managed Code`
+- **Enable 32-Bit Applications:** `False`
+
+### 7. Publish and deploy
+
+Run as administrator:
+
+```bash
+iisreset /stop
+dotnet publish src/ItunesMoviePriceTracker.Web -c Release -o C:\inetpub\ItunesMoviePriceTracker
+iisreset /start
+```
+
+---
+
+
 
 ```
 ItunesMoviePriceTracker/
