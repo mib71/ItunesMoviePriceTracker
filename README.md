@@ -83,7 +83,7 @@ Configure the trigger to run at your preferred times. Price checks can also be t
 
 ### `appsettings.json` (Web & UpdateService)
 
-Both `ItunesMoviePriceTracker.Web` and `ItunesMoviePriceTracker.UpdateService` require a connection string and price check configuration:
+Both `ItunesMoviePriceTracker.Web` and `ItunesMoviePriceTracker.UpdateService` require a local `appsettings.json` that is **not committed to the repository**. Use `appsettings.example.json` as a template — copy it and rename it to `appsettings.json`:
 
 ```json
 {
@@ -93,6 +93,13 @@ Both `ItunesMoviePriceTracker.Web` and `ItunesMoviePriceTracker.UpdateService` r
   "PriceCheck": {
     "ThrottleHours": 24,
     "StoreCountry": "se"
+  },
+  "Notifications": {
+    "SmtpHost": "smtp.gmail.com",
+    "SmtpPort": 587,
+    "SmtpUser": "YOUR_EMAIL",
+    "SmtpPassword": "YOUR_APP_PASSWORD",
+    "ToEmail": "YOUR_EMAIL"
   },
   "Logging": {
     "LogLevel": {
@@ -109,6 +116,8 @@ Replace `YOUR_SERVER` with your SQL Server instance name, e.g. `localhost` or `.
 `ThrottleHours` controls how many hours must pass before a movie is eligible for a new price check. Defaults to `24` if not set.
 
 `StoreCountry` sets the iTunes store country code. Defaults to `se` (Sweden) if not set.
+
+`Notifications` — SMTP settings for email notifications when a price drops below `WatchPrice`. Not yet implemented — coming in a future release.
 
 ---
 
