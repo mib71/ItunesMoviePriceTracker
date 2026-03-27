@@ -365,3 +365,6 @@ MigrationBackup/
 FodyWeavers.xsd
 
 deploy.md
+/src/ItunesMoviePriceTracker.Web/appsettings.json
+/src/ItunesMoviePriceTracker.Web/appsettings.Development.json
+/src/ItunesMoviePriceTracker.UpdateService/appsettings.json
