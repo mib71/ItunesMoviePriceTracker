@@ -101,12 +101,6 @@ Both `ItunesMoviePriceTracker.Web` and `ItunesMoviePriceTracker.UpdateService` r
     "SmtpPassword": "YOUR_APP_PASSWORD",
     "ToEmail": "YOUR_EMAIL"
   },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
   "AllowedHosts": "*"
 }
 ```
@@ -197,6 +191,7 @@ public class MovieRepository : IMovieRepository
 | iTunes data | iTunes Search API (Apple) | Proven, no scraping needed |
 | HTTP | IHttpClientFactory | Best practice for HttpClient lifetime management |
 | Theme | System detection + localStorage | Respects user preference, persists across navigation |
+| Logging | Serilog with file sink | Daily rolling log files, EF Core noise filtered out |
 
 ### Layered Architecture
 
@@ -215,7 +210,9 @@ Trend is intentionally calculated in the UI layer (Blazor component), not in ser
 - 3-second delay between API calls — respects Apple rate limits
 - Movies only checked if `LastChecked` is older than `ThrottleHours` (configurable, default 24h)
 
-### Database Auto-Migration
+### Logging
+
+Serilog is used for structured logging with a daily rolling file sink. EF Core database command logging is suppressed at `Warning` level to avoid noise. Log files are stored in the `logs/` folder of each deployed application and rotated daily with a 30-day retention policy.
 
 On startup, `ApplyMigrationsAsync()` is called via `Program.cs`. This creates the database if it does not exist and applies any pending migrations automatically. No manual `dotnet ef database update` needed.
 
