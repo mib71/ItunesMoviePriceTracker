@@ -94,6 +94,9 @@ Both `ItunesMoviePriceTracker.Web` and `ItunesMoviePriceTracker.UpdateService` r
     "ThrottleHours": 24,
     "StoreCountry": "se"
   },
+  "UiPolling": {
+    "IntervalMinutes": 30
+  },
   "DataProtection": {
     "KeyPath": "YOUR_KEY_PATH"
   },
@@ -113,6 +116,8 @@ Replace `YOUR_SERVER` with your SQL Server instance name, e.g. `localhost` or `.
 `ThrottleHours` controls how many hours must pass before a movie is eligible for a new price check. Defaults to `24` if not set.
 
 `StoreCountry` sets the iTunes store country code. Defaults to `se` (Sweden) if not set.
+
+`UiPolling:IntervalMinutes` sets how often the UI polls the database for updates in the background. Defaults to `30` minutes if not set.
 
 `DataProtection:KeyPath` sets the path where ASP.NET Core Data Protection keys are persisted. Example: `C:\\inetpub\\ItunesMoviePriceTracker\\keys`. The IIS app pool identity needs write access to this folder.
 
@@ -330,7 +335,7 @@ Theme is managed entirely in JavaScript — Blazor never touches it. On page loa
 
 - Multi-language support (UI layer, resource strings)
 - Support for additional iTunes store countries
-- Push notification when `TrackHdPrice` drops below `WatchPrice`
+- Unit tests and integration tests
 
 ---
 

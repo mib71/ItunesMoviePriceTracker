@@ -1,22 +1,28 @@
 ﻿@page "/"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
+@implements IDisposable
 @inject IMovieService MovieService
 @inject IMoviePriceService MoviePriceService
 @inject IPriceUpdateService PriceUpdateService
+@inject IOptions<UiSettings> UiSettings
 @inject NavigationManager NavigationManager
 
+@using ItunesMoviePriceTracker.Web.Configuration
 @using Microsoft.AspNetCore.Components.QuickGrid
 
 <PageTitle>Movie List</PageTitle>
 
 <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-0">
         <h3 class="mb-0">Movie List</h3>
         <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-outline-secondary" @onclick="CheckForPriceUpdateAsync" disabled="@isChecking">
-                @(isChecking ? "Checking..." : "🔄 Refresh")
-            </button>
+            <div class="text-end">
+                <button class="btn btn-outline-secondary mt-4" @onclick="RefreshAsync" disabled="@isChecking">
+                    @(isChecking ? "Checking..." : "🔄 Refresh")
+                </button>
+                <div><small class="text-muted">Last updated: @lastDbCheck.ToString("HH:mm:ss")</small></div>
+            </div>
             <button class="btn btn-primary" @onclick="GoToAddMovie" disabled="@isChecking">
                 Add Movie
             </button>
@@ -80,8 +86,10 @@
     private List<MovieDto> movies = new();
     private List<PriceDynamic> todaysUpdates = new();
     private PaginationState pagination = new() { ItemsPerPage = 15 };
+    private Timer? timer;
     private bool isChecking;
     private string statusMessage = "Press Refresh to check for new prices.";
+    private DateTime lastDbCheck;
     private string? titleFilter;
     private string? directorFilter;
 
@@ -105,10 +113,56 @@
 
     protected override async Task OnInitializedAsync()
     {
-        movies = (await MovieService.GetAllMoviesAsync()).ToList();
-        PriceTrend();        
+        await LoadFromDbAsync();
     }
     
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var intervalMs = UiSettings.Value.PollingIntervalMinutes * 60 * 1000;
+
+            timer = new Timer(async _ =>
+            {
+                await LoadFromDbAsync();
+                await InvokeAsync(StateHasChanged);
+            }, null, intervalMs, intervalMs);
+        }
+    }
+
+    private async Task LoadFromDbAsync()
+    {
+        movies = (await MovieService.GetAllMoviesAsync()).ToList();
+        lastDbCheck = DateTime.Now;
+        PriceTrend();
+    }
+
+    private async Task RefreshAsync()
+    {
+        isChecking = true;
+        statusMessage = "Checking for new prices...(this may take a while)";
+        StateHasChanged();
+
+        statusMessage = await PriceUpdateService.CheckForPriceUpdateAsync();
+        await LoadFromDbAsync();
+
+        var updates = (await MoviePriceService.GetTodaysChangesAsync()).ToList();
+        todaysUpdates = updates.Select(p => new PriceDynamic
+        {
+            TrackName = p.TrackName ?? p.MovieTrackId.ToString(),
+            Price = p.Price
+        }).ToList();
+
+        statusMessage += $" — {updates.Count} updated today";
+        isChecking = false;
+        StateHasChanged();
+    }
+    
+    public void Dispose()
+    {
+        timer?.Dispose();
+    }
+
     private async Task CheckForPriceUpdateAsync()
     {
         isChecking = true;

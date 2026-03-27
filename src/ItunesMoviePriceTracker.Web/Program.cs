@@ -1,8 +1,10 @@
 using ItunesMoviePriceTracker.Services.Extensions;
 using ItunesMoviePriceTracker.Web.Components;
+using ItunesMoviePriceTracker.Web.Configuration;
 using Microsoft.AspNetCore.DataProtection;
 using Serilog;
 
+// ---- Logging ----
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
@@ -20,12 +22,9 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
-
 builder.Host.UseSerilog();
 
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
+// ---- Configuration ----
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 var keyPath = builder.Configuration["DataProtection:KeyPath"]
@@ -33,17 +32,26 @@ var keyPath = builder.Configuration["DataProtection:KeyPath"]
 var throttleHours = builder.Configuration.GetValue<int?>("PriceCheck:ThrottleHours") ?? 24;
 var storeCountry = builder.Configuration.GetValue<string>("PriceCheck:StoreCountry") ?? "se";
 
+// ---- Services ----
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
+
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(keyPath))
     .SetApplicationName("ItunesMoviePriceTracker");
 
 builder.Services.AddMovieServices(connectionString, throttleHours, storeCountry);
 
+builder.Services.Configure<UiSettings>(
+    builder.Configuration.GetSection("UiPolling"));
+
+// ---- Build ----
 Log.Information("ItunesMoviePriceTracker v{Version} starting up",
     typeof(Program).Assembly.GetName().Version);
 
 var app = builder.Build();
 
+// ---- Middleware ----
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -57,7 +65,7 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// Apply migrations on startup
+// ---- Startup tasks ----
 await app.Services.ApplyMigrationsAsync();
 
 var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
@@ -66,7 +74,5 @@ lifetime.ApplicationStopping.Register(() =>
     Log.Information("ItunesMoviePriceTracker shutting down");
     Log.CloseAndFlush();
 });
-
-app.Run();
 
 app.Run();
