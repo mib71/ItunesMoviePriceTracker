@@ -20,7 +20,7 @@
             <div class="col-md-4">
                 <p><strong>Director:</strong> @movie.ArtistName</p>
                 <p><strong>Release:</strong> @movie.ReleaseDate?.ToString("yyyy")</p>
-                <p><strong>Current Price:</strong> @movie.TrackHdPrice kr</p>
+                <p><strong>Current Price:</strong> @movie.TrackHdPrice</p>
                 <div class="input-group mb-2" style="max-width: 250px;">
                     <span class="input-group-text">Watch Price</span>
                     <input type="number" class="form-control" @bind="watchPrice" placeholder="e.g. 39" />
@@ -55,7 +55,7 @@
                                         <img style="height: 20px" src="@item.Trend" alt="trend" />
                                     }
                                 </td>
-                                <td>@item.Price kr</td>
+                                <td>@item.Price</td>
                             </tr>
                         }
                     </tbody>
