@@ -335,7 +335,6 @@ Theme is managed entirely in JavaScript — Blazor never touches it. On page loa
 
 - Multi-language support (UI layer, resource strings)
 - Support for additional iTunes store countries
-- Unit tests and integration tests
 
 ---
 
