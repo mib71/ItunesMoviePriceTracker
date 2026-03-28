@@ -335,6 +335,7 @@ Theme is managed entirely in JavaScript — Blazor never touches it. On page loa
 
 - Multi-language support (UI layer, resource strings)
 - Support for additional iTunes store countries
+- Desktop app version using Blazor + WebView2 — wraps the existing app in a Windows `.exe` installer, eliminating the need for IIS and SQL Server setup for end users
 
 ---
 
