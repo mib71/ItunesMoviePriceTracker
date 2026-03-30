@@ -6,6 +6,7 @@
 @inject IMoviePriceService MoviePriceService
 @inject IPriceUpdateService PriceUpdateService
 @inject IOptions<UiSettings> UiSettings
+@inject ILogger<Home> Logger
 @inject NavigationManager NavigationManager
 
 @using ItunesMoviePriceTracker.Web.Configuration
@@ -21,9 +22,12 @@
                 <button class="btn btn-outline-secondary mt-4" @onclick="RefreshAsync" disabled="@isChecking">
                     @(isChecking ? "Checking..." : "🔄 Refresh")
                 </button>
-                <div><small class="text-muted">Last updated: @lastDbCheck.ToString("HH:mm:ss")</small></div>
+                <div>
+                    <small class="text-muted">Last iTunes check: @oldestCheck.ToString("yyyy-MM-dd HH:mm")</small><br />
+                    <small class="text-muted">Last UI sync from DB: @lastDbCheck.ToString("HH:mm:ss")</small>
+                </div>
             </div>
-            <button class="btn btn-primary" @onclick="GoToAddMovie" disabled="@isChecking">
+            <button class="btn btn-primary mb-4" @onclick="GoToAddMovie" disabled="@isChecking">
                 Add Movie
             </button>
         </div>
@@ -90,6 +94,7 @@
     private bool isChecking;
     private string statusMessage = "Press Refresh to check for new prices.";
     private DateTime lastDbCheck;
+    private DateTime oldestCheck;
     private string? titleFilter;
     private string? directorFilter;
 
@@ -114,26 +119,32 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadFromDbAsync();
+
+        var intervalMs = UiSettings.Value.IntervalMinutes * 60 * 1000;                    
+        timer = new Timer(async _ =>
+        {
+            if (isChecking) return; // Skip if refresh is running
+            
+            try
+            {
+                await InvokeAsync(async () =>
+                {
+                    await LoadFromDbAsync();
+                    StateHasChanged();
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "DB polling from Front-end failed");
+            }
+        }, null, intervalMs, intervalMs);
     }
     
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if (firstRender)
-        {
-            var intervalMs = UiSettings.Value.PollingIntervalMinutes * 60 * 1000;
-
-            timer = new Timer(async _ =>
-            {
-                await LoadFromDbAsync();
-                await InvokeAsync(StateHasChanged);
-            }, null, intervalMs, intervalMs);
-        }
-    }
-
     private async Task LoadFromDbAsync()
     {
         movies = (await MovieService.GetAllMoviesAsync()).ToList();
         lastDbCheck = DateTime.Now;
+        oldestCheck = movies.Any() ? movies.Min(m => m.LastChecked) : DateTime.Now;
         PriceTrend();
     }
 
@@ -162,29 +173,7 @@
     {
         timer?.Dispose();
     }
-
-    private async Task CheckForPriceUpdateAsync()
-    {
-        isChecking = true;
-        statusMessage = "Checking for new prices...(this may take a while)";
-
-        statusMessage = await PriceUpdateService.CheckForPriceUpdateAsync();
-        movies = (await MovieService.GetAllMoviesAsync()).ToList();
-
-        var updates = (await MoviePriceService.GetTodaysChangesAsync()).ToList();
-        
-        todaysUpdates = updates.Select(p => new PriceDynamic
-        {
-            TrackName = p.TrackName ?? p.MovieTrackId.ToString(),
-            Price = p.Price
-        }).ToList();
-
-        statusMessage += $" — {updates.Count} updated today";
-        PriceTrend();
-        isChecking = false;
-        StateHasChanged();
-    }
-
+    
     private void PriceTrend()
     {
         foreach (var movie in movies)

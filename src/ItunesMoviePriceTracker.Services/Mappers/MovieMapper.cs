@@ -16,6 +16,7 @@ public static class MovieMapper
         ArtworkUrl400 = movie.ArtworkUrl400,
         TrackHdPrice = movie.TrackHdPrice,
         WatchPrice = movie.WatchPrice,
+        LastChecked = movie.LastChecked,
         Prices = movie.Prices.Select(MoviePriceMapper.ToDto).ToList()
     };
 

@@ -2,5 +2,5 @@
 
 public class UiSettings
 {
-    public int PollingIntervalMinutes { get; set; } = 30;
+    public int IntervalMinutes { get; set; } = 30;
 }
