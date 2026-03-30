@@ -11,6 +11,7 @@ public class MovieDto
     public string? ArtworkUrl400 { get; set; }
     public decimal TrackHdPrice { get; set; }
     public decimal? WatchPrice { get; set; }
+    public DateTime LastChecked { get; set; }
     public string Trend { get; set; } = string.Empty;
     public List<MoviePriceDto> Prices { get; set; } = new();
 }

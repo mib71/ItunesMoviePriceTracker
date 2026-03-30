@@ -31,6 +31,7 @@ var keyPath = builder.Configuration["DataProtection:KeyPath"]
     ?? throw new InvalidOperationException("DataProtection:KeyPath not found.");
 var throttleHours = builder.Configuration.GetValue<int?>("PriceCheck:ThrottleHours") ?? 24;
 var storeCountry = builder.Configuration.GetValue<string>("PriceCheck:StoreCountry") ?? "se";
+builder.Services.Configure<UiSettings>(builder.Configuration.GetSection("UiPolling"));
 
 // ---- Services ----
 builder.Services.AddRazorComponents()
@@ -42,8 +43,10 @@ builder.Services.AddDataProtection()
 
 builder.Services.AddMovieServices(connectionString, throttleHours, storeCountry);
 
-builder.Services.Configure<UiSettings>(
-    builder.Configuration.GetSection("UiPolling"));
+builder.Services.AddServerSideBlazor(options =>
+{
+    options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(30);
+});
 
 // ---- Build ----
 Log.Information("ItunesMoviePriceTracker v{Version} starting up",
