@@ -6,7 +6,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20IIS-0078D4?logo=windows)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-A Blazor Server application for monitoring iTunes movie HD and 4K prices. Track price history and set watch prices — all from a local IIS-hosted web app.
+A Blazor Server application for managing your iTunes movie wishlist with price monitoring. Track HD and 4K price history, set watch prices and receive email notifications when prices drop, all from a local IIS-hosted web app.
 
 ---
 
