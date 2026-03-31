@@ -47,7 +47,13 @@
 
                         @if (!movieExists)
                         {
-                            <button class="btn btn-success mt-2" type="button" @onclick="AddMovieToDb">Add to list</button>
+                            <div class="input-group mb-2 mt-2" style="max-width: 250px;">
+                                <span class="input-group-text">Watch Price</span>
+                                <input type="number" class="form-control" @bind="watchPrice" placeholder="optional" />
+                            </div>
+                            <button class="btn btn-success mt-2" type="button" @onclick="() => AddMovieToDb()">
+                                Add to list
+                            </button>
                         }
                     </div>
                 </div>
@@ -66,6 +72,7 @@
     private int? trackId;
     private ItunesMovieResult? searchResult;
     private bool movieExists;
+    private decimal? watchPrice;
     private string message = string.Empty;
     private string messageClass = string.Empty;
 
@@ -101,7 +108,7 @@
     {
         if (searchResult is null) return;
 
-        var result = await MovieService.AddMovieAsync(searchResult.TrackId);
+        var result = await MovieService.AddMovieAsync(searchResult.TrackId, watchPrice);
 
         if (result)
         {
