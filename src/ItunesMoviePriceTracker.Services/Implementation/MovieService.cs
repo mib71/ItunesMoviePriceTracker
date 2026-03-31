@@ -5,9 +5,9 @@ using ItunesMoviePriceTracker.Shared.DTOs;
 
 namespace ItunesMoviePriceTracker.Services.Implementation;
 
-public class MovieService(
-    IMovieRepository movieRepository,
-    IItunesApiService itunesApiService) : IMovieService
+public class MovieService(IMovieRepository movieRepository,
+    IItunesApiService itunesApiService,
+    INotificationService notificationService) : IMovieService
 {
     public async Task<IEnumerable<MovieDto>> GetAllMoviesAsync()
     {
@@ -27,14 +27,20 @@ public class MovieService(
         return movie is null ? null : MovieMapper.ToDto(movie);
     }
 
-    public async Task<bool> AddMovieAsync(int trackId)
+    public async Task<bool> AddMovieAsync(int trackId, decimal? watchPrice)
     {
         if (await movieRepository.ExistsAsync(trackId)) return false;
 
         var result = await itunesApiService.FetchMovieAsync(trackId);
         if (result is null) return false;
 
-        await movieRepository.AddAsync(MovieMapper.ToEntity(result));
+        await movieRepository.AddAsync(MovieMapper.ToEntity(result, watchPrice));
+
+        if (watchPrice.HasValue && result.TrackHdPrice <= watchPrice.Value)
+        {
+            await notificationService.SendPriceAlertAsync(result.TrackName ?? "Unknown Movie", result.TrackHdPrice, watchPrice.Value);
+        }
+
         return true;
     }
 
