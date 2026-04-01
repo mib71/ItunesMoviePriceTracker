@@ -129,8 +129,7 @@
             {
                 await InvokeAsync(async () =>
                 {
-                    await LoadFromDbAsync();
-                    StateHasChanged();
+                    await LoadFromDbAsync();                    
                 });
             }
             catch (Exception ex)
@@ -146,6 +145,7 @@
         lastDbCheck = DateTime.Now;
         oldestCheck = movies.Any() ? movies.Min(m => m.LastChecked) : DateTime.Now;
         PriceTrend();
+        StateHasChanged();
     }
 
     private async Task RefreshAsync()

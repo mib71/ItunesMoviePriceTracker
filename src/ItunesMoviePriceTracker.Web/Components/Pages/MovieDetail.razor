@@ -130,9 +130,13 @@
         var sorted = movie.Prices.OrderByDescending(p => p.Date).ToList();
         priceItems = sorted.Select(p => new PriceDynamic { Date = p.Date, Price = p.Price }).ToList();
 
+        var allTimeLow = priceItems.Min(p => p.Price);
+
         for (int i = 0; i < priceItems.Count - 1; i++)
         {
-            if (priceItems[i].Price > priceItems[i + 1].Price)
+            if (priceItems[i].Price == allTimeLow)
+                priceItems[i].Trend = "images/arrow_yellow.png";
+            else if (priceItems[i].Price > priceItems[i + 1].Price)
                 priceItems[i].Trend = "images/arrow_red.png";
             else if (priceItems[i].Price < priceItems[i + 1].Price)
                 priceItems[i].Trend = "images/arrow_green.png";
