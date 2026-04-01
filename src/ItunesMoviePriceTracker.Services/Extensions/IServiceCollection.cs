@@ -20,9 +20,10 @@ public static class ServiceCollectionExtensions
 
         // Repositories
         services.AddScoped<IMovieRepository>(sp =>
-        new MovieRepository(
-            sp.GetRequiredService<AppDbContext>(),
-            throttleHours));
+            new MovieRepository(
+                sp.GetRequiredService<AppDbContext>(),
+                throttleHours)
+            );
         services.AddScoped<IMoviePriceRepository, MoviePriceRepository>();
 
         // Services
@@ -30,10 +31,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMoviePriceService, MoviePriceService>();
         services.AddScoped<IPriceUpdateService, PriceUpdateService>();
         services.AddScoped<IItunesApiService>(sp =>
-        new ItunesApiService(
-            sp.GetRequiredService<IHttpClientFactory>(),
-            storeCountry)
-        );
+            new ItunesApiService(
+                sp.GetRequiredService<IHttpClientFactory>(),
+                storeCountry)
+            );
         services.AddScoped<INotificationService, EmailNotificationService>();
 
         // HttpClient
