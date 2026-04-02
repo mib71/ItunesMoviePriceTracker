@@ -7,13 +7,22 @@ namespace ItunesMoviePriceTracker.Repository.Repositories;
 public class MovieRepository(AppDbContext context, int throttleHours = 24) : IMovieRepository
 {
     public async Task<IEnumerable<Movie>> GetAllAsync()
-        => await context.Movies.Include(m => m.Prices).OrderBy(m => m.TrackHdPrice).ToListAsync();
+        => await context.Movies
+            .AsNoTracking()
+            .Include(m => m.Prices)
+            .OrderBy(m => m.TrackHdPrice)
+            .ToListAsync();
 
     public async Task<Movie?> GetByIdAsync(int trackId)
-        => await context.Movies.FindAsync(trackId);
+        => await context.Movies
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.TrackId == trackId);
 
     public async Task<Movie?> GetByIdWithPricesAsync(int trackId)
-        => await context.Movies.Include(m => m.Prices).FirstOrDefaultAsync(m => m.TrackId == trackId);
+        => await context.Movies
+            .AsNoTracking()
+            .Include(m => m.Prices)
+            .FirstOrDefaultAsync(m => m.TrackId == trackId);
 
     public async Task AddAsync(Movie movie)
     {
