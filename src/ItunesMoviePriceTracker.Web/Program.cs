@@ -2,6 +2,7 @@ using ItunesMoviePriceTracker.Services.Extensions;
 using ItunesMoviePriceTracker.Web.Components;
 using ItunesMoviePriceTracker.Web.Configuration;
 using Microsoft.AspNetCore.DataProtection;
+using Radzen;
 using Serilog;
 
 // ---- Logging ----
@@ -36,13 +37,11 @@ builder.Services.Configure<UiSettings>(builder.Configuration.GetSection("UiPolli
 // ---- Services ----
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(keyPath))
     .SetApplicationName("ItunesMoviePriceTracker");
-
 builder.Services.AddMovieServices(connectionString, throttleHours, storeCountry);
-
+builder.Services.AddRadzenComponents();
 builder.Services.AddServerSideBlazor(options =>
 {
     options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(30);
