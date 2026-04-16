@@ -119,6 +119,7 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadFromDbAsync();
+        await GetTodaysUpdatesAsync();
 
         var intervalMs = UiSettings.Value.IntervalMinutes * 60 * 1000;                    
         timer = new Timer(async _ =>
@@ -156,8 +157,15 @@
 
         statusMessage = await PriceUpdateService.CheckForPriceUpdateAsync();
         await LoadFromDbAsync();
-
-        var updates = (await MoviePriceService.GetTodaysChangesAsync()).ToList();
+        await GetTodaysUpdatesAsync();
+        
+        isChecking = false;
+        StateHasChanged();
+    }
+    
+    private async Task GetTodaysUpdatesAsync()
+    {
+        List<MoviePriceDto> updates = (await MoviePriceService.GetTodaysChangesAsync()).ToList();
         todaysUpdates = updates.Select(p => new PriceDynamic
         {
             TrackName = p.TrackName ?? p.MovieTrackId.ToString(),
@@ -165,10 +173,8 @@
         }).ToList();
 
         statusMessage += $" — {updates.Count} updated today";
-        isChecking = false;
-        StateHasChanged();
     }
-    
+
     public void Dispose()
     {
         timer?.Dispose();
