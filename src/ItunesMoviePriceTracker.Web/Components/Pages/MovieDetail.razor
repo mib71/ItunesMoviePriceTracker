@@ -1,4 +1,4 @@
-﻿@page "/movie/{id:int}"
+﻿@page "/movie/{id:long}"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject IMovieService MovieService
@@ -149,7 +149,7 @@
 
 @code {
     [Parameter]
-    public int id { get; set; }
+    public long id { get; set; }
 
     private MovieDto? movie;
     private List<PriceDynamic> priceItems = new();

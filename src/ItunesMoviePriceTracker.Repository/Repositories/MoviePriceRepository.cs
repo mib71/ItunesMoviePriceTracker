@@ -6,14 +6,14 @@ namespace ItunesMoviePriceTracker.Repository.Repositories;
 
 public class MoviePriceRepository(AppDbContext context) : IMoviePriceRepository
 {
-    public async Task<IEnumerable<MoviePrice>> GetByMovieIdAsync(int trackId)
+    public async Task<IEnumerable<MoviePrice>> GetByMovieIdAsync(long trackId)
         => await context.Prices
             .AsNoTracking()
             .Where(p => p.MovieTrackId == trackId)
             .OrderByDescending(p => p.Date)
             .ToListAsync();
 
-    public async Task<MoviePrice?> GetLatestByMovieIdAsync(int trackId)
+    public async Task<MoviePrice?> GetLatestByMovieIdAsync(long trackId)
         => await context.Prices
             .AsNoTracking()
             .Where(p => p.MovieTrackId == trackId)

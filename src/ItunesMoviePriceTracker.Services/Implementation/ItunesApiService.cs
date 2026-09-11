@@ -6,7 +6,7 @@ namespace ItunesMoviePriceTracker.Services.Implementation;
 
 public class ItunesApiService(IHttpClientFactory httpClientFactory, string storeCountry) : IItunesApiService
 {
-    public async Task<ItunesMovieResult?> FetchMovieAsync(int trackId)
+    public async Task<ItunesMovieResult?> FetchMovieAsync(long trackId)
     {
         var url = $"https://itunes.apple.com/lookup?country={storeCountry}&id={trackId}";
         var client = httpClientFactory.CreateClient();

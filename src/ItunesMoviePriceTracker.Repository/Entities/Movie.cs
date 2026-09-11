@@ -6,7 +6,7 @@ namespace ItunesMoviePriceTracker.Repository.Entities;
 public class Movie
 {
     [Key]
-    public int TrackId { get; set; }
+    public long TrackId { get; set; }
     [MaxLength(500)]
     public string? TrackName { get; set; }
     public DateTime? ReleaseDate { get; set; }

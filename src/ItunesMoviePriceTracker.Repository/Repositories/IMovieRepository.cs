@@ -5,11 +5,11 @@ namespace ItunesMoviePriceTracker.Repository.Repositories;
 public interface IMovieRepository
 {
     Task<IEnumerable<Movie>> GetAllAsync();
-    Task<Movie?> GetByIdAsync(int trackId);
-    Task<Movie?> GetByIdWithPricesAsync(int trackId);
+    Task<Movie?> GetByIdAsync(long trackId);
+    Task<Movie?> GetByIdWithPricesAsync(long trackId);
     Task AddAsync(Movie movie);
     Task UpdateAsync(Movie movie);
-    Task DeleteAsync(int trackId);
-    Task<bool> ExistsAsync(int trackId);
+    Task DeleteAsync(long trackId);
+    Task<bool> ExistsAsync(long trackId);
     Task<IEnumerable<Movie>> GetMoviesForPriceCheckAsync();
 }

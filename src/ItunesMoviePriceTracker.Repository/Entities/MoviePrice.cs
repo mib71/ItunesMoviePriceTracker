@@ -10,6 +10,6 @@ public class MoviePrice
     [Column(TypeName = "decimal(18,2)")]
     public decimal Price { get; set; }
 
-    public int MovieTrackId { get; set; }
+    public long MovieTrackId { get; set; }
     public Movie Movie { get; set; } = null!;
 }

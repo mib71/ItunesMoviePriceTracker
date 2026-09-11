@@ -2,7 +2,7 @@
 
 public class MovieDto
 {
-    public int TrackId { get; set; }
+    public long TrackId { get; set; }
     public string? TrackName { get; set; }
     public DateTime? ReleaseDate { get; set; }
     public string? ArtistName { get; set; }

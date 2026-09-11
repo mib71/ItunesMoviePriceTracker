@@ -13,12 +13,12 @@ public class MovieRepository(AppDbContext context, int throttleHours = 24) : IMo
             .OrderBy(m => m.TrackHdPrice)
             .ToListAsync();
 
-    public async Task<Movie?> GetByIdAsync(int trackId)
+    public async Task<Movie?> GetByIdAsync(long trackId)
         => await context.Movies
             .AsNoTracking()
             .FirstOrDefaultAsync(m => m.TrackId == trackId);
 
-    public async Task<Movie?> GetByIdWithPricesAsync(int trackId)
+    public async Task<Movie?> GetByIdWithPricesAsync(long trackId)
         => await context.Movies
             .AsNoTracking()
             .Include(m => m.Prices)
@@ -37,7 +37,7 @@ public class MovieRepository(AppDbContext context, int throttleHours = 24) : IMo
         await context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(int trackId)
+    public async Task DeleteAsync(long trackId)
     {
         var movie = await context.Movies.FindAsync(trackId);
         if (movie != null)
@@ -47,7 +47,7 @@ public class MovieRepository(AppDbContext context, int throttleHours = 24) : IMo
         }
     }
 
-    public async Task<bool> ExistsAsync(int trackId)
+    public async Task<bool> ExistsAsync(long trackId)
         => await context.Movies.AnyAsync(m => m.TrackId == trackId);
 
     public async Task<IEnumerable<Movie>> GetMoviesForPriceCheckAsync()
