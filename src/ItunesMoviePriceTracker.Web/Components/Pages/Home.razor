@@ -39,7 +39,7 @@
         {
             @foreach (var price in todaysUpdates)
             {
-                <p class="mb-0">&bull; @price.TrackName — @price.Price</p>
+                <p class="mb-0">&bull; <a href="@($"movie/{price.MovieTrackId}")">@price.TrackName</a> — @price.Price.ToString("C")</p>
             }
         }
     </details>
@@ -168,6 +168,7 @@
         List<MoviePriceDto> updates = (await MoviePriceService.GetTodaysChangesAsync()).ToList();
         todaysUpdates = updates.Select(p => new PriceDynamic
         {
+            MovieTrackId = p.MovieTrackId,
             TrackName = p.TrackName ?? p.MovieTrackId.ToString(),
             Price = p.Price
         }).ToList();
@@ -206,6 +207,7 @@
 
     private class PriceDynamic
     {
+        public long MovieTrackId { get; set; }
         public string TrackName { get; set; } = string.Empty;
         public decimal Price { get; set; }
     }
