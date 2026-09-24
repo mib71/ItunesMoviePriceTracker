@@ -309,7 +309,7 @@ Theme is managed entirely in JavaScript — Blazor never touches it. On page loa
 
 | Column | Type | Notes |
 |---|---|---|
-| TrackId | int PK | iTunes Track ID |
+| TrackId | bigint PK | iTunes Track ID |
 | TrackName | nvarchar(500) | Movie title |
 | ReleaseDate | datetime2(7) | |
 | ArtistName | nvarchar(255) | Director |
@@ -327,7 +327,7 @@ Theme is managed entirely in JavaScript — Blazor never touches it. On page loa
 | Id | int PK | |
 | Date | datetime2(7) | UTC |
 | Price | decimal(18,2) | |
-| MovieTrackId | int FK | → dbo.Movies.TrackId |
+| MovieTrackId | bigint FK | → dbo.Movies.TrackId |
 
 ---
 
