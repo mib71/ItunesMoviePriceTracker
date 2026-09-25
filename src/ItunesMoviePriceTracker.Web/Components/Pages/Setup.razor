@@ -1,0 +1,66 @@
+﻿@page "/setup"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@using ItunesMoviePriceTracker.Services.Storefronts
+@inject IStoreSettingsProvider StoreSettingsProvider
+@inject NavigationManager NavigationManager
+@inject ILogger<Setup> Logger
+
+<PageTitle>Setup</PageTitle>
+
+<div class="container mt-4" style="max-width: 480px;">
+    <h3 class="mb-3">Choose your iTunes store</h3>
+    <p>Prices are tracked in the store you choose and shown in its currency.</p>
+    <p class="text-muted"><small>This choice cannot be changed later.</small></p>
+
+    <select class="form-select mb-3" @bind="selectedCountryCode" disabled="@isSaving">
+        <option value="">Select a store…</option>
+        @foreach (var storefront in StorefrontCatalog.All)
+        {
+            <option value="@storefront.CountryCode">@storefront.Name (@storefront.CurrencyCode)</option>
+        }
+    </select>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+    }
+
+    <button class="btn btn-primary" type="button" @onclick="SaveAsync"
+            disabled="@(string.IsNullOrEmpty(selectedCountryCode) || isSaving)">
+        Start tracking
+    </button>
+</div>
+
+@code {
+    private string selectedCountryCode = string.Empty;
+    private string errorMessage = string.Empty;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await StoreSettingsProvider.GetAsync() is not null)
+            NavigationManager.NavigateTo("/");
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrEmpty(selectedCountryCode))
+            return;
+
+        isSaving = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            await StoreSettingsProvider.SelectAsync(selectedCountryCode);
+            NavigationManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to save iTunes store {CountryCode}", selectedCountryCode);
+            errorMessage = "The store could not be saved. Please try again.";
+            isSaving = false;
+        }
+    }
+}

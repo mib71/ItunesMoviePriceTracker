@@ -39,7 +39,7 @@
         {
             @foreach (var price in todaysUpdates)
             {
-                <p class="mb-0">&bull; <a href="@($"movie/{price.MovieTrackId}")">@price.TrackName</a> — @price.Price.ToString("C")</p>
+                <p class="mb-0">&bull; <a href="@($"movie/{price.MovieTrackId}")">@price.TrackName</a> — @price.Price.ToString("N2")</p>
             }
         }
     </details>

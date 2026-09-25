@@ -45,6 +45,14 @@ var host = Host.CreateDefaultBuilder(args)
 
 await host.Services.ApplyMigrationsAsync();
 
+var store = await host.Services.GetRequiredService<IStoreSettingsProvider>().GetAsync();
+if (store is null)
+{
+    Log.Warning("No iTunes store has been selected. Complete setup in the web app. Skipping price check");
+    Log.CloseAndFlush();
+    return 1;
+}
+
 var priceUpdateService = host.Services.GetRequiredService<IPriceUpdateService>();
 var result = await priceUpdateService.CheckForPriceUpdateAsync();
 
@@ -52,3 +60,4 @@ Log.Information("ItunesMoviePriceTracker.UpdateService shutting down");
 Log.CloseAndFlush();
 
 Console.WriteLine(result);
+return 0;

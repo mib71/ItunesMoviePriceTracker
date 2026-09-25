@@ -24,6 +24,7 @@ A Blazor Server application for managing your iTunes movie wishlist with price m
 - 📈 Price history per movie with trend indicators (up / down / all-time low)
 - 🎯 Set a personal watch price per movie
 - 🔄 Scheduled price checks via Windows Task Scheduler
+- 🌍 Choose your iTunes store on first start — 18 countries supported
 - 🖱️ Manual price update trigger from the UI
 - 🌙 Dark / light mode with system theme detection and localStorage persistence
 - 🔍 Filter by title and director
@@ -62,6 +63,8 @@ Or open `ItunesMoviePriceTracker.sln` in Visual Studio and press F5.
 
 The database and all migrations are applied automatically on startup. If the database does not exist it will be created.
 
+On first start you are taken to a setup page where you choose which iTunes store to track prices in. The choice is stored in the database and cannot be changed later. Existing databases from earlier versions are automatically set to the Swedish store and skip this step.
+
 ### 4. Set up the Update Service (optional)
 
 To run price checks on a schedule, register the UpdateService with Windows Task Scheduler:
@@ -76,6 +79,8 @@ publish/UpdateService/ItunesMoviePriceTracker.UpdateService.exe
 ```
 
 Configure the trigger to run at your preferred times. Price checks can also be triggered manually from the Web UI via the Refresh button.
+
+Until a store has been selected in the web app, the UpdateService logs a warning and exits with code `1`, which shows as `0x1` in the task's Last Run Result.
 
 ---
 
@@ -120,7 +125,6 @@ Replace `YOUR_SERVER` with your SQL Server instance name, e.g. `localhost` or `.
 
 `Notifications` — SMTP settings for email notifications when a price drops below `WatchPrice`.
 
-The iTunes store country is not part of `appsettings.json`. It is stored in the database table `dbo.StoreSettings`, so the Web app and the UpdateService always use the same store (see [Database Schema](#database-schema)). Existing databases are migrated to the Swedish store (`se`). The former `PriceCheck:StoreCountry` setting is ignored and can be removed.
 
 ---
 
@@ -271,8 +275,9 @@ Trend is intentionally calculated in the UI layer (Blazor component), not in ser
 ### iTunes API Behavior
 
 - Store country is read from `dbo.StoreSettings` via `IStoreSettingsProvider` and cached for the lifetime of the process
+- Supported stores are defined in `StorefrontCatalog` in the Services project
 - Every price record is tagged with the country code of the store it was fetched from
-- If no store has been selected, price checks are skipped and a warning is logged
+- If no store has been selected, all pages redirect to `/setup` and price checks are skipped with a warning
 - 3-second delay between API calls — respects Apple rate limits
 - Movies only checked if `LastChecked` is older than `ThrottleHours` (configurable, default 24h)
 
@@ -332,7 +337,8 @@ Holds the iTunes store selected for this installation. At most one row, enforced
 ## Future Considerations
 
 - Multi-language support (UI layer, resource strings)
-- Support for additional iTunes store countries
+- Price formatting per store currency (prices are currently shown without a currency symbol)
+- Changing the iTunes store after initial setup (price history is already tagged per store)
 - Desktop app version using Blazor + WebView2 — wraps the existing app in a Windows `.exe` installer, eliminating the need for IIS and SQL Server setup for end users
 
 ---

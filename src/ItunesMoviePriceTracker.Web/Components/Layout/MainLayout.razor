@@ -1,4 +1,6 @@
 ﻿@inherits LayoutComponentBase
+@inject IStoreSettingsProvider StoreSettingsProvider
+@inject NavigationManager NavigationManager
 <RadzenComponents @rendermode="InteractiveServer" />
 
 <div class="container py-2 d-flex justify-content-between align-items-center">
@@ -21,3 +23,23 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    // Pages that must render even when no store has been selected.
+    private static readonly string[] PathsWithoutStoreCheck = ["setup", "error"];
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsPathWithoutStoreCheck())
+            return;
+
+        if (await StoreSettingsProvider.GetAsync() is null)
+            NavigationManager.NavigateTo("/setup");
+    }
+
+    private bool IsPathWithoutStoreCheck()
+    {
+        var path = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('?', '#')[0];
+        return PathsWithoutStoreCheck.Contains(path, StringComparer.OrdinalIgnoreCase);
+    }
+}
