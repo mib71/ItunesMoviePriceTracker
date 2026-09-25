@@ -108,6 +108,13 @@
     {
         if (searchResult is null) return;
 
+        if (watchPrice is < 0)
+        {
+            message = "Watch price cannot be negative.";
+            messageClass = "alert-warning";
+            return;
+        }
+
         var result = await MovieService.AddMovieAsync(searchResult.TrackId, watchPrice);
 
         if (result)
