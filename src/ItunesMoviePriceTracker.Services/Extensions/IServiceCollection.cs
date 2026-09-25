@@ -15,13 +15,13 @@ public static class ServiceCollectionExtensions
         string storeCountry)
     {
         // Database
-        services.AddDbContext<AppDbContext>(options =>
+        services.AddDbContextFactory<AppDbContext>(options =>
             options.UseSqlServer(connectionString));
 
         // Repositories
         services.AddScoped<IMovieRepository>(sp =>
             new MovieRepository(
-                sp.GetRequiredService<AppDbContext>(),
+                sp.GetRequiredService<IDbContextFactory<AppDbContext>>(),
                 throttleHours)
             );
         services.AddScoped<IMoviePriceRepository, MoviePriceRepository>();
@@ -45,8 +45,8 @@ public static class ServiceCollectionExtensions
 
     public static async Task ApplyMigrationsAsync(this IServiceProvider services)
     {
-        using var scope = services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await db.Database.MigrateAsync();
+        var contextFactory = services.GetRequiredService<IDbContextFactory<AppDbContext>>();
+        await using var context = await contextFactory.CreateDbContextAsync();
+        await context.Database.MigrateAsync();
     }
 }
