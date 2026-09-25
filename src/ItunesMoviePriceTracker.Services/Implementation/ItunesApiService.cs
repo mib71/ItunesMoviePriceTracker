@@ -4,11 +4,13 @@ using System.Text.Json;
 
 namespace ItunesMoviePriceTracker.Services.Implementation;
 
-public class ItunesApiService(IHttpClientFactory httpClientFactory, string storeCountry) : IItunesApiService
+public class ItunesApiService(IHttpClientFactory httpClientFactory,
+    IStoreSettingsProvider storeSettingsProvider) : IItunesApiService
 {
     public async Task<ItunesMovieResult?> FetchMovieAsync(long trackId)
     {
-        var url = $"https://itunes.apple.com/lookup?country={storeCountry}&id={trackId}";
+        var store = await storeSettingsProvider.GetRequiredAsync();
+        var url = $"https://itunes.apple.com/lookup?country={Uri.EscapeDataString(store.CountryCode)}&id={trackId}";
         var client = httpClientFactory.CreateClient();
 
         var response = await client.GetAsync(url);

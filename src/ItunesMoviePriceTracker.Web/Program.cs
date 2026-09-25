@@ -31,7 +31,6 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 var keyPath = builder.Configuration["DataProtection:KeyPath"]
     ?? throw new InvalidOperationException("DataProtection:KeyPath not found.");
 var throttleHours = builder.Configuration.GetValue<int?>("PriceCheck:ThrottleHours") ?? 24;
-var storeCountry = builder.Configuration.GetValue<string>("PriceCheck:StoreCountry") ?? "se";
 builder.Services.Configure<UiSettings>(builder.Configuration.GetSection("UiPolling"));
 
 // ---- Services ----
@@ -40,7 +39,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(keyPath))
     .SetApplicationName("ItunesMoviePriceTracker");
-builder.Services.AddMovieServices(connectionString, throttleHours, storeCountry);
+builder.Services.AddMovieServices(connectionString, throttleHours);
 builder.Services.AddRadzenComponents();
 builder.Services.AddServerSideBlazor(options =>
 {

@@ -91,8 +91,7 @@ Both `ItunesMoviePriceTracker.Web` and `ItunesMoviePriceTracker.UpdateService` r
     "DefaultConnection": "Server=YOUR_SERVER;Database=ItunesMovies;Trusted_Connection=True;TrustServerCertificate=True;"
   },
   "PriceCheck": {
-    "ThrottleHours": 24,
-    "StoreCountry": "se"
+    "ThrottleHours": 24
   },
   "UiPolling": {
     "IntervalMinutes": 30
@@ -115,13 +114,13 @@ Replace `YOUR_SERVER` with your SQL Server instance name, e.g. `localhost` or `.
 
 `ThrottleHours` controls how many hours must pass before a movie is eligible for a new price check. Defaults to `24` if not set.
 
-`StoreCountry` sets the iTunes store country code. Defaults to `se` (Sweden) if not set.
-
 `UiPolling:IntervalMinutes` sets how often the UI polls the database for updates in the background. Defaults to `30` minutes if not set.
 
 `DataProtection:KeyPath` sets the path where ASP.NET Core Data Protection keys are persisted. Example: `C:\\inetpub\\ItunesMoviePriceTracker\\keys`. The IIS app pool identity needs write access to this folder.
 
 `Notifications` — SMTP settings for email notifications when a price drops below `WatchPrice`.
+
+The iTunes store country is not part of `appsettings.json`. It is stored in the database table `dbo.StoreSettings`, so the Web app and the UpdateService always use the same store (see [Database Schema](#database-schema)). Existing databases are migrated to the Swedish store (`se`). The former `PriceCheck:StoreCountry` setting is ignored and can be removed.
 
 ---
 
@@ -241,23 +240,6 @@ Web → (DTOs in Shared) → Service → Repository → MSSQL
 | Nullable | Nullable reference types enabled |
 | Naming | PascalCase for classes/methods, camelCase for locals |
 
-Example:
-```csharp
-// ✅ Primary constructor
-public class MovieRepository(AppDbContext context, int throttleHours) : IMovieRepository
-{
-    public async Task<IEnumerable<Movie>> GetAllAsync()
-        => await context.Movies.Include(m => m.Prices).OrderBy(m => m.TrackHdPrice).ToListAsync();
-}
-
-// ❌ Old style
-public class MovieRepository : IMovieRepository
-{
-    private readonly AppDbContext _context;
-    public MovieRepository(AppDbContext context) { _context = context; }
-}
-```
-
 ---
 
 ## Architecture & Key Decisions
@@ -270,6 +252,7 @@ public class MovieRepository : IMovieRepository
 | Hosting | IIS (local) | Consistent with existing setup |
 | Price updates | Windows Task Scheduler + manual UI trigger | Simple, reliable, no external dependencies |
 | iTunes data | iTunes Search API (Apple) | Proven, no scraping needed |
+| Store country | Stored in database, not configuration | Web and UpdateService cannot drift apart; price history is tagged per store |
 | HTTP | IHttpClientFactory | Best practice for HttpClient lifetime management |
 | Theme | System detection + localStorage | Respects user preference, persists across navigation |
 | Logging | Serilog with file sink | Daily rolling log files, EF Core noise filtered out |
@@ -287,7 +270,9 @@ Trend is intentionally calculated in the UI layer (Blazor component), not in ser
 
 ### iTunes API Behavior
 
-- Store country configurable via `PriceCheck:StoreCountry` in `appsettings.json` (default `se`)
+- Store country is read from `dbo.StoreSettings` via `IStoreSettingsProvider` and cached for the lifetime of the process
+- Every price record is tagged with the country code of the store it was fetched from
+- If no store has been selected, price checks are skipped and a warning is logged
 - 3-second delay between API calls — respects Apple rate limits
 - Movies only checked if `LastChecked` is older than `ThrottleHours` (configurable, default 24h)
 
@@ -327,7 +312,20 @@ Theme is managed entirely in JavaScript — Blazor never touches it. On page loa
 | Id | int PK | |
 | Date | datetime2(7) | UTC |
 | Price | decimal(18,2) | |
+| CountryCode | nvarchar(2) | iTunes store the price was fetched from, e.g. `se` |
 | MovieTrackId | bigint FK | → dbo.Movies.TrackId |
+
+**dbo.StoreSettings**
+
+Holds the iTunes store selected for this installation. At most one row, enforced by the check constraint `CK_StoreSettings_SingleRow`.
+
+| Column | Type | Notes |
+|---|---|---|
+| Id | int PK | Always `1` |
+| CountryCode | nvarchar(2) | iTunes store country, e.g. `se` |
+| CurrencyCode | nvarchar(3) | ISO 4217, e.g. `SEK` |
+| Culture | nvarchar(10) | Culture name for the store, e.g. `sv-SE` |
+| SelectedAt | datetime2(7) | UTC |
 
 ---
 

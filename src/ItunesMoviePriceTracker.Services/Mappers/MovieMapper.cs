@@ -20,7 +20,7 @@ public static class MovieMapper
         Prices = movie.Prices.Select(MoviePriceMapper.ToDto).ToList()
     };
 
-    public static Movie ToEntity(ItunesMovieResult result, decimal? watchPrice = null) => new()
+    public static Movie ToEntity(ItunesMovieResult result, string countryCode, decimal? watchPrice = null) => new()
     {
         TrackId = result.TrackId,
         TrackName = result.TrackName,
@@ -34,7 +34,7 @@ public static class MovieMapper
         WatchPrice = watchPrice,
         Prices = new List<MoviePrice>
         {
-            new() { Price = result.TrackHdPrice, Date = DateTime.UtcNow }
+            new() { Price = result.TrackHdPrice, CountryCode = countryCode, Date = DateTime.UtcNow }
         }
     };
 }
