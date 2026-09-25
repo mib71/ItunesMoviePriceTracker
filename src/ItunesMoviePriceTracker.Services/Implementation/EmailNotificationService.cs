@@ -44,7 +44,7 @@ public class EmailNotificationService(IConfiguration configuration,
 
             await client.SendMailAsync(message);
 
-            logger.LogInformation("Price alert email sent for {MovieTitle}. Current price: {CurrentPrice} kr, Watch price: {WatchPrice} kr",
+            logger.LogInformation("Price alert email sent for {MovieTitle}. Current price: {CurrentPrice} , Watch price: {WatchPrice} ",
                 movieTitle, currentPrice, watchPrice);
         }
         catch (Exception ex)
