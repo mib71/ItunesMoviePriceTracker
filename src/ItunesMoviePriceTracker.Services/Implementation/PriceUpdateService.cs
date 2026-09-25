@@ -7,12 +7,20 @@ public class PriceUpdateService(IMovieRepository movieRepository,
     IMoviePriceRepository moviePriceRepository,
     IItunesApiService itunesApiService,
     INotificationService notificationService,
+    IStoreSettingsProvider storeSettingsProvider,
     ILogger<PriceUpdateService> logger) : IPriceUpdateService
 {
     private static readonly TimeSpan ApiCallDelay = TimeSpan.FromSeconds(3);
 
     public async Task<string> CheckForPriceUpdateAsync()
     {
+        var store = await storeSettingsProvider.GetAsync();
+        if (store is null)
+        {
+            logger.LogWarning("Price check skipped: no iTunes store has been selected");
+            return $"Price check skipped, no store selected at {DateTime.Now:HH:mm:ss}";
+        }
+
         var movies = (await movieRepository.GetMoviesForPriceCheckAsync()).ToList();
 
         if (movies.Count == 0)
@@ -21,12 +29,13 @@ public class PriceUpdateService(IMovieRepository movieRepository,
             return $"No movies due for price check at {DateTime.Now:HH:mm:ss}";
         }
 
-        logger.LogInformation("Starting price check for {Count} movies", movies.Count);
+        logger.LogInformation("Starting price check for {Count} movies in store {CountryCode}",
+            movies.Count, store.CountryCode);
 
         var updated = 0;
         foreach (var (index, movie) in movies.Index())
         {
-            if (await TryCheckMoviePriceAsync(movie))
+            if (await TryCheckMoviePriceAsync(movie, store.CountryCode))
                 updated++;
 
             if (index < movies.Count - 1)
@@ -43,11 +52,11 @@ public class PriceUpdateService(IMovieRepository movieRepository,
     /// Checks a single movie and never throws, so one failing movie cannot stop the whole run.
     /// </summary>
     /// <returns><c>true</c> if a new price was recorded.</returns>
-    private async Task<bool> TryCheckMoviePriceAsync(Movie movie)
+    private async Task<bool> TryCheckMoviePriceAsync(Movie movie, string countryCode)
     {
         try
         {
-            return await CheckMoviePriceAsync(movie);
+            return await CheckMoviePriceAsync(movie, countryCode);
         }
         catch (Exception ex)
         {
@@ -56,7 +65,7 @@ public class PriceUpdateService(IMovieRepository movieRepository,
         }
     }
 
-    private async Task<bool> CheckMoviePriceAsync(Movie movie)
+    private async Task<bool> CheckMoviePriceAsync(Movie movie, string countryCode)
     {
         var result = await itunesApiService.FetchMovieAsync(movie.TrackId);
 
@@ -66,16 +75,17 @@ public class PriceUpdateService(IMovieRepository movieRepository,
             return false;
         }
 
-        await RecordNewPriceAsync(movie, result.TrackHdPrice);
+        await RecordNewPriceAsync(movie, result.TrackHdPrice, countryCode);
         await TrySendPriceAlertAsync(movie, result.TrackHdPrice);
         return true;
     }
 
-    private async Task RecordNewPriceAsync(Movie movie, decimal newPrice)
+    private async Task RecordNewPriceAsync(Movie movie, decimal newPrice, string countryCode)
     {
         await moviePriceRepository.AddAsync(new MoviePrice
         {
             Price = newPrice,
+            CountryCode = countryCode,
             Date = DateTime.UtcNow,
             MovieTrackId = movie.TrackId
         });

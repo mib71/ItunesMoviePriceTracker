@@ -11,8 +11,7 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddMovieServices(this IServiceCollection services, 
         string connectionString, 
-        int throttleHours,
-        string storeCountry)
+        int throttleHours)
     {
         // Database
         services.AddDbContextFactory<AppDbContext>(options =>
@@ -25,16 +24,14 @@ public static class ServiceCollectionExtensions
                 throttleHours)
             );
         services.AddScoped<IMoviePriceRepository, MoviePriceRepository>();
+        services.AddSingleton<IStoreSettingsRepository, StoreSettingsRepository>(); //<-- Handles the store settings and provides them to other services
 
         // Services
         services.AddScoped<IMovieService, MovieService>();
         services.AddScoped<IMoviePriceService, MoviePriceService>();
         services.AddScoped<IPriceUpdateService, PriceUpdateService>();
-        services.AddScoped<IItunesApiService>(sp =>
-            new ItunesApiService(
-                sp.GetRequiredService<IHttpClientFactory>(),
-                storeCountry)
-            );
+        services.AddSingleton<IStoreSettingsProvider, StoreSettingsProvider>(); //<-- Handles the store settings and provides them to other services
+        services.AddScoped<IItunesApiService, ItunesApiService>();
         services.AddScoped<INotificationService, EmailNotificationService>();
 
         // HttpClient

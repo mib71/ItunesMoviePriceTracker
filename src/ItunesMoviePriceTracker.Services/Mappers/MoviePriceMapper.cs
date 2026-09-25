@@ -13,12 +13,4 @@ public static class MoviePriceMapper
         MovieTrackId = price.MovieTrackId,
         TrackName = price.Movie?.TrackName
     };
-
-    public static MoviePrice ToEntity(MoviePriceDto dto) => new()
-    {
-        Id = dto.Id,
-        Date = dto.Date,
-        Price = dto.Price,
-        MovieTrackId = dto.MovieTrackId
-    };
 }

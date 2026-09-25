@@ -38,9 +38,8 @@ var host = Host.CreateDefaultBuilder(args)
             ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
         var throttleHours = context.Configuration.GetValue<int?>("PriceCheck:ThrottleHours") ?? 24;
-        var storeCountry = context.Configuration.GetValue<string>("PriceCheck:StoreCountry") ?? "se";
-
-        services.AddMovieServices(connectionString, throttleHours, storeCountry);
+        
+        services.AddMovieServices(connectionString, throttleHours);
     })
     .Build();
 

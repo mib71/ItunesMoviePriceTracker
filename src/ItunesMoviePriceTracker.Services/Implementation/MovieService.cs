@@ -7,7 +7,8 @@ namespace ItunesMoviePriceTracker.Services.Implementation;
 
 public class MovieService(IMovieRepository movieRepository,
     IItunesApiService itunesApiService,
-    INotificationService notificationService) : IMovieService
+    INotificationService notificationService,
+    IStoreSettingsProvider storeSettingsProvider) : IMovieService
 {
     public async Task<IEnumerable<MovieDto>> GetAllMoviesAsync()
     {
@@ -34,7 +35,8 @@ public class MovieService(IMovieRepository movieRepository,
         var result = await itunesApiService.FetchMovieAsync(trackId);
         if (result is null) return false;
 
-        await movieRepository.AddAsync(MovieMapper.ToEntity(result, watchPrice));
+        var store = await storeSettingsProvider.GetRequiredAsync();
+        await movieRepository.AddAsync(MovieMapper.ToEntity(result, store.CountryCode, watchPrice));
 
         if (watchPrice.HasValue && result.TrackHdPrice <= watchPrice.Value)
         {
