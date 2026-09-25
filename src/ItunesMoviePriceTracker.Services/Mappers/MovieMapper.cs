@@ -23,7 +23,8 @@ public static class MovieMapper
     public static Movie ToEntity(ItunesMovieResult result, string countryCode, decimal? watchPrice = null) => new()
     {
         TrackId = result.TrackId,
-        TrackName = result.TrackName,
+        TrackName = result.TrackName
+            ?? throw new ArgumentException("iTunes result has no track name.", nameof(result)),
         ReleaseDate = result.ReleaseDate,
         ArtistName = result.ArtistName,
         LongDescription = result.LongDescription,
