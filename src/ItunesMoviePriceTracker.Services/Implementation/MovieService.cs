@@ -2,13 +2,15 @@
 using ItunesMoviePriceTracker.Services.Interfaces;
 using ItunesMoviePriceTracker.Services.Mappers;
 using ItunesMoviePriceTracker.Shared.DTOs;
+using Microsoft.Extensions.Logging;
 
 namespace ItunesMoviePriceTracker.Services.Implementation;
 
 public class MovieService(IMovieRepository movieRepository,
     IItunesApiService itunesApiService,
     INotificationService notificationService,
-    IStoreSettingsProvider storeSettingsProvider) : IMovieService
+    IStoreSettingsProvider storeSettingsProvider,
+    ILogger<MovieService> logger) : IMovieService
 {
     public async Task<IEnumerable<MovieDto>> GetAllMoviesAsync()
     {
@@ -35,12 +37,18 @@ public class MovieService(IMovieRepository movieRepository,
         var result = await itunesApiService.FetchMovieAsync(trackId);
         if (result is null) return false;
 
+        if (string.IsNullOrWhiteSpace(result.TrackName))
+        {
+            logger.LogWarning("Movie {TrackId} was not added: iTunes returned no title", trackId);
+            return false;
+        }
+
         var store = await storeSettingsProvider.GetRequiredAsync();
         await movieRepository.AddAsync(MovieMapper.ToEntity(result, store.CountryCode, watchPrice));
 
         if (watchPrice.HasValue && result.TrackHdPrice <= watchPrice.Value)
         {
-            await notificationService.SendPriceAlertAsync(result.TrackName ?? "Unknown Movie", result.TrackHdPrice, watchPrice.Value);
+            await notificationService.SendPriceAlertAsync(result.TrackName, result.TrackHdPrice, watchPrice.Value);
         }
 
         return true;

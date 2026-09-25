@@ -45,7 +45,7 @@
                             </div>
                         }
 
-                        @if (!movieExists)
+                        @if (canAdd)
                         {
                             <div class="input-group mb-2 mt-2" style="max-width: 260px;">
                                 <span class="input-group-text">Watch Price</span>
@@ -71,7 +71,7 @@
 @code {
     private long? trackId;
     private ItunesMovieResult? searchResult;
-    private bool movieExists;
+    private bool canAdd;
     private decimal? watchPrice;
     private string message = string.Empty;
     private string messageClass = string.Empty;
@@ -82,7 +82,7 @@
 
         message = string.Empty;
         searchResult = null;
-        movieExists = false;
+        canAdd = false;
 
         searchResult = await ItunesApiService.FetchMovieAsync(trackId.Value);
 
@@ -93,10 +93,18 @@
             return;
         }
 
-        var existing = await MovieService.GetMovieAsync(searchResult.TrackId);
-        if (existing is not null)
+        if (string.IsNullOrWhiteSpace(searchResult.TrackName))
         {
-            movieExists = true;
+            message = "This movie has no title on iTunes and cannot be added.";
+            messageClass = "alert-warning";
+            return;
+        }
+
+        var existing = await MovieService.GetMovieAsync(searchResult.TrackId);
+        canAdd = existing is null;
+
+        if (!canAdd)
+        {
             message = "Movie already exists in DB.";
             messageClass = "alert-info";
         }
@@ -121,7 +129,7 @@
         {
             message = "Movie saved successfully!";
             messageClass = "alert-success";
-            movieExists = true;
+            canAdd = false;
         }
         else
         {
